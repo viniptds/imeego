@@ -1,0 +1,32 @@
+
+services:
+  imeego:
+    build: .
+    ports:
+      - "6001:6001"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6001/health"]
+      interval: 300s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  crm-db:
+    image: mariadb:10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: crm_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    volumes:
+      - dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+volumes:
+  dbdata:
