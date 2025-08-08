@@ -1,0 +1,35 @@
+
+services:
+  imeego:
+    container_name: flask_app
+    build: ../Dockerfile
+    ports:
+      - "8000:6001"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6001/health"]
+      interval: 300s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+
+  worker:
+    build: .
+    container_name: email_worker
+    command: ["python", "-u", "app/email_worker.py"]
+    env_file:
+      - .env
+    depends_on:
+      - imeego
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f email_worker || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - PYTHONPATH=/app
