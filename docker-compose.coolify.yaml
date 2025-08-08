@@ -2,7 +2,7 @@
 services:
   imeego:
     container_name: flask_app
-    build: ../
+    build: .
     ports:
       - "8000:6001"
     volumes:
