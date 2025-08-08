@@ -4,7 +4,7 @@ services:
     container_name: flask_app
     build: .
     ports:
-      - "8000:6001"
+      - "8056:6001"
     volumes:
       - .:/app
     env_file:
