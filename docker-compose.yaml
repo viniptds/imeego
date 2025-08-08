@@ -1,6 +1,7 @@
 
 services:
   imeego:
+    container_name: flask_app
     build: .
     ports:
       - "6001:6001"
@@ -15,6 +16,26 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    depends_on:
+      - rabbitmq
+      - crm-db
+
+  worker:
+    build: .
+    container_name: email_worker
+    command: ["python", "-u", "app/email_worker.py"]
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - imeego
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f email_worker || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - PYTHONPATH=/app
 
   crm-db:
     image: mariadb:10.6
@@ -27,6 +48,13 @@ services:
       - dbdata:/var/lib/mysql
     ports:
       - "3306:3306"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    container_name: rabbitmq
 
 volumes:
   dbdata:

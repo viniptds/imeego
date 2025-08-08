@@ -1,7 +1,10 @@
 flask
 Flask-SQLAlchemy
 flask-cors
+flask-mail
 pymysql
 python-dotenv
 werkzeug
 gunicorn
+pika
+jinja2

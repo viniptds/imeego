@@ -6,10 +6,6 @@ from datetime import datetime
 
 contact_bp = Blueprint('contacts', __name__)
 
-@contact_bp.route('/', methods=['GET'])
-def home():
-    return jsonify({"message": "CRM API is running", "version": "1.0.0"})
-
 @contact_bp.route('/contacts/<int:id>', methods=['GET'])
 def get_one_contact(id):
     contact = Contact.query.get_or_404(id)
@@ -63,3 +59,31 @@ def delete_contact(id):
     db.session.delete(contact)
     db.session.commit()
     return jsonify({'message': 'Deleted successfully'})
+
+@contact_bp.route('/contacts/<int:id>/send-mail', methods=['GET'])
+def send_contact_mail(id):
+    contact = Contact.query.get_or_404(id)
+    import pika, json
+
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+        channel = connection.channel()
+        channel.queue_declare(queue='email_queue')
+        print("Publishing job...")
+        channel.basic_publish(
+            exchange='',
+            routing_key='email_queue',
+            body=json.dumps({
+                "to": contact.email,
+                "subject": "Test Email",
+                "context": {
+                    "name": "Vinicius",
+                    "message": "This is a test email via RabbitMQ + Flask!"
+                }
+            })
+        )
+        connection.close()
+    
+        return jsonify({'message': 'Mail sent successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': f'Error reading file: {str(e)}'}), 500
