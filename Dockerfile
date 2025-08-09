@@ -24,7 +24,6 @@ COPY . .
 # RUN mkdir -p transcriptions
 
 # Expose port
-EXPOSE 6001
 
 # Set environment variables
 # ENV FLASK_APP=app.py
@@ -33,3 +32,5 @@ EXPOSE 6001
 # Run the application
 # CMD ["python", "run.py"]
 CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:6001", "run:app"]
+
+EXPOSE 6001
