@@ -5,7 +5,10 @@ import time
 import traceback
 from flask import render_template
 from flask_mail import Message
-from app import create_app, mail
+from app import create_app, mail, get_rabbit_connection
+from dotenv import load_dotenv
+import os
+import ssl
 
 app = create_app()
 
@@ -35,7 +38,7 @@ def consume():
     while True:  # Auto-reconnect loop
         try:
             print('Start consuming queue...')
-            connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+            connection = pika.BlockingConnection(get_rabbit_connection())
             channel = connection.channel()
             
             channel.queue_declare(queue='email_queue')

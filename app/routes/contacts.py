@@ -1,8 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from app.models import Contact
 from app.utils import validate_contact_data
-from app import db
+from app import db, mail, get_rabbit_connection
 from datetime import datetime
+from flask_mail import Message
+import pika, json, os
 
 contact_bp = Blueprint('contacts', __name__)
 
@@ -63,10 +65,11 @@ def delete_contact(id):
 @contact_bp.route('/contacts/<int:id>/send-mail', methods=['GET'])
 def send_contact_mail(id):
     contact = Contact.query.get_or_404(id)
-    import pika, json
+    connection_info = get_rabbit_connection()
+    print(f"ConnectionInfo:", connection_info, flush=True)
 
+    connection = pika.BlockingConnection(connection_info)
     try:
-        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         channel = connection.channel()
         channel.queue_declare(queue='email_queue')
         print("Publishing job...")
@@ -86,4 +89,6 @@ def send_contact_mail(id):
     
         return jsonify({'message': 'Mail sent successfully'})
     except Exception as e:
+        print(f"Error sending email: {e}", flush=True)
+        print(e)
         return jsonify({'status': 'error', 'error': f'Error reading file: {str(e)}'}), 500
