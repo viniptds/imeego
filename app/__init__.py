@@ -36,6 +36,9 @@ def create_app():
     app.register_blueprint(contact_bp)
     app.register_blueprint(main_bp)
 
+    with app.app_context():
+        db.create_all()
+
     return app
 
 def get_rabbit_connection():

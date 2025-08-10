@@ -62,11 +62,24 @@ def delete_contact(id):
     db.session.commit()
     return jsonify({'message': 'Deleted successfully'})
 
-@contact_bp.route('/contacts/<int:id>/send-mail', methods=['GET'])
+@contact_bp.route('/contacts/<int:id>/send-mail', methods=['POST'])
 def send_contact_mail(id):
     contact = Contact.query.get_or_404(id)
+    data = request.get_json()
+
+    # TODO: Validate data
+    errors = validate_contact_data(data)
+    # if errors is empty
+    if errors:
+        return jsonify({'errors': errors}), 400
+    
+    topic = data.get("topic", "Hello")
+    context = {
+        "name": "Vinicius",
+        "message": data.get("message", "")
+    }
     connection_info = get_rabbit_connection()
-    print(f"ConnectionInfo:", connection_info, flush=True)
+    # print(f"ConnectionInfo:", connection_info, flush=True)
 
     connection = pika.BlockingConnection(connection_info)
     try:
@@ -78,11 +91,8 @@ def send_contact_mail(id):
             routing_key='email_queue',
             body=json.dumps({
                 "to": contact.email,
-                "subject": "Test Email",
-                "context": {
-                    "name": "Vinicius",
-                    "message": "This is a test email via RabbitMQ + Flask!"
-                }
+                "subject": topic,
+                "context": context
             })
         )
         connection.close()
@@ -92,3 +102,11 @@ def send_contact_mail(id):
         print(f"Error sending email: {e}", flush=True)
         print(e)
         return jsonify({'status': 'error', 'error': f'Error reading file: {str(e)}'}), 500
+
+def validate_contact_data(data, is_update=False):
+    errors = []
+    if not data.get('topic'):
+        errors.append('topic is required')
+    if not data.get('message'):
+        errors.append('message is required')
+    return errors
